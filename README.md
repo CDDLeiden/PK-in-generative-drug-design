@@ -1,6 +1,6 @@
-Integrating pharmacokinetics and quantitative systems pharmacology approaches in generative drug design
+Integrating Pharmacokinetics and Quantitative Systems Pharmacology Approaches in Generative Drug Design
 =======================================================================================================
-This repository contains the code used to generate the data and figures for the manuscript "Integrating pharmacokinetics and quantitative systems pharmacology approaches in generative drug design"
+This repository contains the code used to generate the data and figures for the manuscript "Integrating Pharmacokinetics and Quantitative Systems Pharmacology Approaches in Generative Drug Design"
 by Helle W. van den Maagdenberg, Jikke de Mol van Otterloo, J.G. Coen van
 Hasselt, Piet H. van der Graaf, and Gerard J.P. van Westen
 

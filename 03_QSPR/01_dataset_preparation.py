@@ -233,7 +233,7 @@ if __name__ == "__main__":
     data_path_pk = join(
         config["BASE_DIR"],
         config["PROCESSED_DATA_DIR"],
-        args.data_path_pk,
+        "PKDataset",
         "pk_dataset.tsv",
     )
     output_dir = join(config["BASE_DIR"], config["PROCESSED_DATA_DIR"], "QSPR")

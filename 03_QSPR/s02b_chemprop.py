@@ -171,7 +171,7 @@ def hyperparam_optimization(qspr_dir: str, overwrite: bool, gpu: int):
         model = ChempropModel(
             base_dir=join(qspr_dir, "models"),
             name=model_name,
-            parameters={"epochs": 2},
+            parameters={"epochs": 200, "batch_size": 128},
         )
         model.setGPUs([gpu])
         # Train the model

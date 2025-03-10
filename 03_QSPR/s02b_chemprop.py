@@ -166,6 +166,7 @@ def hyperparam_optimization(
     dataset = QSPRDataset.fromFile(
         join(qspr_dir, "data", folder, f"{folder}_meta.json")
     )
+    logger.info(f"Dataset {folder} loaded.")
 
     # skip if model already exists and overwrite is False
     model_name = f"Chemprop_{dataset.name}"
@@ -180,6 +181,7 @@ def hyperparam_optimization(
             base_dir=join(qspr_dir, "models"),
             name=model_name,
             parameters={"epochs": 200, "batch_size": 128},
+            random_state=dataset.randomState,
         )
         model.setGPUs([gpu])
         # Train the model

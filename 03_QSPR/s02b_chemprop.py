@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import json
+import logging
 import os
 from itertools import product
 from os.path import join
@@ -10,6 +11,7 @@ import pandas as pd
 from qsprpred.data import QSPRDataset, RandomSplit
 from qsprpred.data.descriptors.sets import SmilesDesc
 from qsprpred.extra.gpu.models.chemprop import ChempropModel
+from qsprpred.logs import setLogger
 from qsprpred.logs.utils import enable_file_logger, export_conda_environment
 from qsprpred.models import CrossValAssessor, EarlyStoppingMode, QSPRModel
 from qsprpred.models.hyperparam_optimization import GridSearchOptimization
@@ -22,6 +24,7 @@ def dataset_preparation(
     output_dir: str,
     seed: int = 42,
     overwrite: bool = False,
+    target_prop: str = "A2AR",
 ):
     """Prepare datasets for ChemProp models
 
@@ -36,6 +39,7 @@ def dataset_preparation(
         seed (int, optional): Random seed. Defaults to 42.
         n_proc (int, optional): Number of processors to use. Defaults to 5.
         overwrite (bool, optional): Overwrite existing datasets. Defaults to False.
+        target_prop (str, optional): Target property to optimize. Defaults to "A2AR".
     """
     # Define the transformers for the target properties
     transformer_dict = {
@@ -45,16 +49,19 @@ def dataset_preparation(
         "A2AR": None,
     }
 
-    for target_prop in ["A2AR", "CL", "FU", "VDSS"]:
-        data_path = data_path_a2ar if target_prop == "A2AR" else data_path_pk
+    assert (
+        target_prop in transformer_dict.keys()
+    ), f"Invalid target property {target_prop}"
 
-        # Skip if dataset already exists
-        if (
-            os.path.exists(join(output_dir, "data", f"{target_prop}_chemprop"))
-            and not overwrite
-        ):
-            logger.info(f"Dataset for {target_prop} already exists. Skipping. \n")
-            continue
+    data_path = data_path_a2ar if target_prop == "A2AR" else data_path_pk
+
+    # Skip if dataset already exists
+    if (
+        os.path.exists(join(output_dir, "data", f"{target_prop}_chemprop"))
+        and not overwrite
+    ):
+        logger.info(f"Dataset for {target_prop} already exists. Skipping. \n")
+    else:
         # Create dataset
         dataset = QSPRDataset.fromTableFile(
             name=f"{target_prop}_chemprop",
@@ -83,14 +90,12 @@ def dataset_preparation(
 def model_training(model: QSPRModel, dataset: QSPRDataset):
     """Optimize hyperparameters for ChemProp models"""
 
-    hyperparam_dict = (
-        {
-            "depth": [2, 3, 5],  # number of message passing steps (default 3)
-            "hidden_size": [128, 256, 512],  # dim of the hidden layers in MPN (300)
-            "ffn_num_layers": [1, 2, 3],  # num layers in FFN after MPN encoding (2)
-            "dropout": [0.0, 0.1, 0.2],  # dropout rate (0.0)
-        },
-    )
+    hyperparam_dict = {
+        "depth": [3, 5],  # number of message passing steps (default 3)
+        "hidden_size": [128, 256, 512],  # dim of the hidden layers in MPN (300)
+        "ffn_num_layers": [1, 2, 3],  # num layers in FFN after MPN encoding (2)
+        "dropout": [0.0, 0.1, 0.2],  # dropout rate (0.0)
+    }
 
     logger.info(f"Training model {model.name} started at {datetime.datetime.now()}.")
     gs = GridSearchOptimization(
@@ -99,6 +104,7 @@ def model_training(model: QSPRModel, dataset: QSPRDataset):
             scoring="r2", round=7, mode=EarlyStoppingMode.RECORDING
         ),
     )
+
     best_params = gs.optimize(model, dataset)
 
     # log the best epoch for each fold and parameter setting
@@ -126,13 +132,16 @@ def model_training(model: QSPRModel, dataset: QSPRDataset):
     return model_result_df
 
 
-def hyperparam_optimization(qspr_dir: str, overwrite: bool, gpu: int):
+def hyperparam_optimization(
+    qspr_dir: str, overwrite: bool, gpu: int, target_prop: str = "A2AR"
+):
     """Main function to create models for all datasets in the qspr_dir.
 
     Args:
         qspr_dir (str): Path to the directory with the QSPR datasets.
         overwrite (bool): Overwrite existing models.
         gpu (int): GPU to use.
+        target_prop (str, optional): Target property to optimize. Defaults to "A2AR".
     """
     dataset_folders = os.listdir(join(qspr_dir, "data"))
     # add data settings for consistency with other models
@@ -152,21 +161,20 @@ def hyperparam_optimization(qspr_dir: str, overwrite: bool, gpu: int):
             "dataset_path",
         ]
     )
-    for folder in dataset_folders:
-        logger.info(f"Loading dataset {folder}.")
-        dataset = QSPRDataset.fromFile(
-            join(qspr_dir, "data", folder, f"{folder}_meta.json")
+    folder = [folder for folder in dataset_folders if target_prop in folder][0]
+    logger.info(f"Loading dataset {folder}.")
+    dataset = QSPRDataset.fromFile(
+        join(qspr_dir, "data", folder, f"{folder}_meta.json")
+    )
+
+    # skip if model already exists and overwrite is False
+    model_name = f"Chemprop_{dataset.name}"
+
+    if not overwrite and os.path.exists(join(qspr_dir, "models", model_name)):
+        logger.info(
+            f"Model {model_name} already exists and overwrite is False. Skipping.\n"
         )
-
-        # skip if model already exists and overwrite is False
-        model_name = f"Chemprop_{dataset.name}"
-
-        if not overwrite and os.path.exists(join(qspr_dir, "models", model_name)):
-            logger.info(
-                f"Model {model_name} already exists and overwrite is False. Skipping.\n"
-            )
-            continue
-
+    else:
         # Create the model
         model = ChempropModel(
             base_dir=join(qspr_dir, "models"),
@@ -186,7 +194,7 @@ def hyperparam_optimization(qspr_dir: str, overwrite: bool, gpu: int):
             sep="\t",
             index=False,
         )
-    logger.info(f"Model creation finished at {datetime.datetime.now()}.")
+        logger.info(f"Model creation finished at {datetime.datetime.now()}.")
 
 
 if __name__ == "__main__":
@@ -202,6 +210,12 @@ if __name__ == "__main__":
         "--overwrite",
         action="store_true",
         help="Overwrite existing data sets",
+    )
+    parser.add_argument(
+        "--property",
+        type=str,
+        default="A2AR",
+        help="Target property to optimize",
     )
     parser.add_argument(
         "--seed",
@@ -245,11 +259,12 @@ if __name__ == "__main__":
     # Set up logging
     logSettings = enable_file_logger(
         log_folder=f"{qspr_dir}/models",
-        filename=f"ChemProp_{now}.log",
+        filename=f"ChemProp_{args.property}_{now}.log",
         log_name=__name__,
         debug=False,
         disable_existing_loggers=False,
         init_data={
+            "TASK": args.property,
             "A2AR_DATA_DIR": join(config["PROCESSED_DATA_DIR"], "A2ARDataset"),
             "PK_DATA_DIR": join(config["PROCESSED_DATA_DIR"], "PKDataset"),
             "QSPR_DIR": join(config["PROCESSED_DATA_DIR"], "QSPR"),
@@ -260,14 +275,25 @@ if __name__ == "__main__":
     )
     logger = logSettings.log
 
+    # Change the format of the root logger
+    root_logger = logging.getLogger()
+    new_formatter = logging.Formatter("%(asctime)s - %(levelname)s: %(message)s")
+    root_logger.handlers[1].setFormatter(new_formatter)
+
+    # Propagate qsprpred logger
+    qsprpred_logger = logging.getLogger("qsprpred")
+    qsprpred_logger.setLevel(logging.INFO)
+    qsprpred_logger.propagate = True
+    setLogger(qsprpred_logger)
+
     # Save the current git commit
     repo = git.Repo(search_parent_directories=True)
     sha = repo.head.object.hexsha
     logger.info(f"Git commit: {sha}")
 
     dataset_preparation(
-        data_path_a2ar, data_path_pk, qspr_dir, args.seed, args.overwrite
+        data_path_a2ar, data_path_pk, qspr_dir, args.seed, args.overwrite, args.property
     )
-    hyperparam_optimization(qspr_dir, args.overwrite, args.gpu)
+    hyperparam_optimization(qspr_dir, args.overwrite, args.gpu, args.property)
 
     save_best_models_to_config(qspr_dir, args.config_file)

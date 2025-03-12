@@ -62,50 +62,51 @@ The data was generated with the following scripts:
 
 ### 01_A2ARDataset
 Downloading and preprocessing the A2AR dataset:
-- `01_data_creation.py`: Download the A2AR dataset from Papyrus, filters and saves the dataset
-- `02_dataset_figures.ipynb`: Generate the figures for the A2AR dataset
+- `s01_data_creation.py`: Download the A2AR dataset from Papyrus, filters and saves the dataset
+- `s02_dataset_figures.ipynb`: Generate the figures for the A2AR dataset
 
 ### 02_PKDataset
 Preprocessing the PK dataset:
-- `01_data_creation.py`: Preprocess the Lombardo, et al. 2018 dataset and save the dataset
-- `02_dataset_figures.ipynb`: Generate the figures for the PK dataset
+- `s01_data_creation.py`: Preprocess the Lombardo, et al. 2018 dataset and save the dataset
+- `s02_dataset_figures.ipynb`: Generate the figures for the PK dataset
 
 ### 03_QSPR
 Preparing datasets for modelling, training and evaluating the QSPR models:
-- `01_dataset_preparation.py`: Prepare datasets for QSPR models by transforming the target properties and calculating and filtering features.
-- `02_hyperparameter_optimization.py`: Perform grid search over different descriptors, filters, algorithms, and hyperparameters to find the best model. Adds best model and data name to config file.
-- `03_model_training.py`: Train models with the best hyperparameters found in the grid search and peform bootstrapping to evaluate the model and applicability domain. Also, calculates permutation importance.
-- `04_model_figures.ipynb`: Generate the figures for the QSPR models.
+- `s01_dataset_preparation.py`: Prepare datasets for QSPR models by transforming the target properties and calculating and filtering features.
+- `s02_hyperparameter_optimization.py`: Perform grid search over different descriptors, filters, algorithms, and hyperparameters to find the best model. Adds best model and data name to config file.
+- `s02b_chemprop.py`: Perform grid search over different hyperparameters for the Chemprop model. Adds best model and data name to config file, if better than the best model found in `s02_hyperparameter_optimization.py`.
+- `s03_model_training.py`: Train models with the best hyperparameters found in the grid search and peform bootstrapping to evaluate the model and applicability domain. Also, calculates permutation importance.
+- `s04_model_figures.ipynb`: Generate the figures for the QSPR models.
 
 ### 04_DNDD
 Performs fine-tuning, grid search, and training and evaluation of the DNDD models:
 - `_drugex_environment.py`: Contains the environment for the DrugEx model.
-- `01_finetuning.py`: Finetunes pre-trained models on the respective A2AR or PK dataset.
-- `02_grid_search.py`: Performs grid search over different hyperparameters to find the best model on the task of maximizing A2AR affinity and the FU (unbound fraction).
-- `03_reinforcement_learning.py`: Trains the DNDD model with the best hyperparameters found in the grid search for each optimization task.
-- `04_generate.py`: Generates compounds with the trained DNDD model.
-- `05_make_umaps.py`: Calculates UMAP coordinates for the generated compounds.
-- `06_grid_search_figures.ipynb`: Generate the figures for the grid search.
-- `07_dndd_figures.ipynb`: Generate the figures for the DNDD models.
+- `s01_finetuning.py`: Finetunes pre-trained models on the respective A2AR or PK dataset.
+- `s02_grid_search.py`: Performs grid search over different hyperparameters to find the best model on the task of maximizing A2AR affinity and the FU (unbound fraction).
+- `s03_reinforcement_learning.py`: Trains the DNDD model with the best hyperparameters found in the grid search for each optimization task.
+- `s04_generate.py`: Generates compounds with the trained DNDD model.
+- `s05_make_umaps.py`: Calculates UMAP coordinates for the generated compounds.
+- `s06_grid_search_figures.ipynb`: Generate the figures for the grid search.
+- `s07_dndd_figures.ipynb`: Generate the figures for the DNDD models.
 
 ### 05_QSP_modelling
 Recreating the simulations from Voronova et al., 2021 and simulating the generated compounds:
 - `models/`: Contains the RxODE models for the simulations.
    * `TME_model_voronova_rewrite.R`: The model from Voronova et al., 2021. in RxODE format.
    * `TME_model_1comp.R`: The Voronova model adapted for simulations with generated compounds.
-- `01_RxODE_voronova_rewrite.R`: Recreates the simulations from Voronova et al., 2021.
-- `02_example_simulations.R`: Simulates tumor growth for four example compounds.
-- `03_simulations_generated_compounds.R`: Simulates tumor growth for the generated compounds.
+- `s01_RxODE_voronova_rewrite.R`: Recreates the simulations from Voronova et al., 2021.
+- `s02_example_simulations.R`: Simulates tumor growth for four example compounds.
+- `s03_simulations_generated_compounds.R`: Simulates tumor growth for the generated compounds.
 
 ### Paper figures and tables
 The figures and tables are generated with the following notebooks:
-- `01_A2ARDataset/02_dataset_figures.ipynb`: Supplementary Figure S1
-- `02_PKDataset/02_dataset_figures.ipynb`: Supplementary Figure S2 and S8
-- `03_QSPR/04_model_figures.ipynb`: Figure 2 and 3, Supplementary Table S2, and Supplementary Figure S3
-- `04_DNDD/06_grid_search_figures.ipynb`: Supplementary Table S3
-- `04_DNDD/07_dndd_figures.ipynb`: Figure 4, 5, 6, 7, Table 2, Supplementary Table S1, and Supplementary Figure S5, S6 and S7
-- `05_QSP_modelling/02_example_sims.ipynb`: Figure 8B
-- `05_QSP_modelling/03_simulations_generated_compounds.R`: Figure 8C
+- `01_A2ARDataset/s02_dataset_figures.ipynb`: Supplementary Figure S1
+- `02_PKDataset/s02_dataset_figures.ipynb`: Supplementary Figure S2 and S8
+- `03_QSPR/s04_model_figures.ipynb`: Figure 2 and 3, Supplementary Table S2, and Supplementary Figure S3
+- `04_DNDD/s06_grid_search_figures.ipynb`: Supplementary Table S3
+- `04_DNDD/s07_dndd_figures.ipynb`: Figure 4, 5, 6, 7, Table 2, Supplementary Table S1, and Supplementary Figure S5, S6 and S7
+- `05_QSP_modelling/s02_example_sims.ipynb`: Figure 8B
+- `05_QSP_modelling/s03_simulations_generated_compounds.R`: Figure 8C
 
 ## References
 - Lombardo, F., Berellini, G., & Obach, R. S. (2018). Trend Analysis of a Database of Intravenous Pharmacokinetic Parameters in Humans for 1352 Drug Compounds. Drug Metabolism and Disposition, 46(11), 1466–1477. https://doi.org/10.1124/dmd.118.082966
